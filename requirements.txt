@@ -1,0 +1,8 @@
+numpy
+scipy
+tqdm进度条
+sklearn数据集
+matplotlib
+tensorflow >= 1.4
+Keras >= 2.1
+cleverhans >= 2.0
