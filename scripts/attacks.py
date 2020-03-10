@@ -32,7 +32,8 @@ def fgsm(x, predictions, eps, clip_min=None, clip_max=None, y=None):
     #         tf.equal(predictions,
     #                  tf.reduce_max(predictions, 1, keep_dims=True)))
     y = y / tf.reduce_sum(y, 1, keep_dims=True)
-    logits, = predictions.op.inputs
+    # logits, = predictions.op.inputs
+    logits=predictions
     loss = tf.reduce_mean(
         tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=y)
     )

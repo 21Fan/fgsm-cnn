@@ -12,7 +12,9 @@ LOW_CASE = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'
 UP_CASE = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
            'V', 'W', 'X', 'Y', 'Z']
 
-CAPTCHA_LIST = NUMBER
+CAPTCHA_LIST = UP_CASE+LOW_CASE
+LEN=26
+#LEN都可以替换为len(captcha_list)
 CAPTCHA_LEN = 4         # 验证码长度
 CAPTCHA_HEIGHT = 60     # 验证码高度
 CAPTCHA_WIDTH = 160     # 验证码宽度
