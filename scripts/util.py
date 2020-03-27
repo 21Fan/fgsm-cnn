@@ -26,6 +26,33 @@ def text2vec(text, captcha_len=CAPTCHA_LEN, captcha_list=CAPTCHA_LIST):
     return vector
 
 
+class CAPTCHA:
+    def __init__(self):
+
+        height ,width= CAPTCHA_HEIGHT , CAPTCHA_WIDTH
+        batch_x = np.zeros([10000, height, width, CAPTCHA_CHANNEL])
+        batch_y = np.zeros([10000, CAPTCHA_LEN * LEN])  # 60*40
+
+        test_x = np.zeros([1000, height, width, CAPTCHA_CHANNEL])
+        test_y = np.zeros([1000, CAPTCHA_LEN * LEN])  # 60*40
+        for i in range(10000):  # 生成对应的训练集
+            image, text = gen_captcha_text_and_image()
+
+            batch_x[i, :] = image
+
+            batch_y[i, :] = text2vec(text)  # 验证码文本的向量形式
+        for i in range(1000):  # 生成对应的训练集
+            image, text = gen_captcha_text_and_image()
+
+            test_x[i, :] = image
+            test_y[i, :] = text2vec(text)  # 验证码文本的向量形式
+
+
+
+        self.validation_data = test_x
+        self.validation_labels = test_y
+        self.train_data = batch_x
+        self.train_labels = batch_y
 def get_data(batch_count=10000,test_count=1000, height=CAPTCHA_HEIGHT,width=CAPTCHA_WIDTH ):
     """
     获取训练图片组

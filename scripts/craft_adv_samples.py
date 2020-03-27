@@ -10,7 +10,8 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import keras.backend as K
 from keras.models import load_model
-from captcha_gen import CAPTCHA_LIST,LEN
+from captcha_gen import CAPTCHA_LIST,LEN,CAPTCHA_LEN
+
 from attacks import (fast_gradient_sign_method, basic_iterative_method,
                             saliency_map_method)
 from util import get_data
@@ -116,6 +117,38 @@ def craft_one_type(sess, model, X, Y, dataset, attack, batch_size):
         s = 1 / (1 + np.exp(-x))
         return s
 
+
+
+    temperature = 1
+    predicted = model.predict(X) / temperature
+    print(predicted)
+    #print(np.concatenate((softmax(predicted,0), softmax(predicted,1), softmax(predicted,2),softmax(predicted,3)), axis=1))
+    def softmax(X, i):  # softmax函数
+        return np.exp(X[LEN * i:LEN * (i + 1)]) / np.sum(np.exp(X[LEN * i:LEN * (i + 1)]))
+
+    # print(np.concatenate((softmax(predicted,0), softmax(predicted,1), softmax(predicted,2),softmax(predicted,3)), axis=1))
+
+
+    def soften(predicted):
+        soft=predicted
+        for i in range(1):
+            soft[i] = np.concatenate(
+                (softmax(predicted[i], 0), softmax(predicted[i], 1), softmax(predicted[i], 2), softmax(predicted[i], 3)),
+                axis=0)
+        return soft
+
+    def fn(correct, predicted):
+        loss = 0
+        for i in range(CAPTCHA_LEN):
+            loss += tf.nn.softmax_cross_entropy_with_logits(labels=correct[ LEN * i:LEN * (i + 1)],
+                                                            logits=predicted[ LEN * i:LEN * (i + 1)])
+        return loss
+    # print(fn(Y,model.predict(X)))
+    soft_label=soften(predicted)
+    print(Y,soft_label)
+
+    # print((model.predict(X) ))
+    # print(softmax(model.predict(X)))
     pred_adv=sigmoid(model.predict(X_adv))
 
     pred_x=sigmoid(model.predict(X))
@@ -139,22 +172,25 @@ def craft_one_type(sess, model, X, Y, dataset, attack, batch_size):
         if t==4:
             succeed+=1
     print (succeed,' ',t_all)
+    def max_predict(x):
+        for i in range(4):
+            print(CAPTCHA_LIST[np.argmax(x[0, LEN * i:LEN * (i + 1)])], " ", end="")
     print("真实值")
-    for i in range(4):
-        print(CAPTCHA_LIST[np.argmax(Y[0, LEN*i:LEN*(i+1)])]," ", end="")
+    max_predict(Y)
+    print("   ")
+    print("蒸馏值")
+    max_predict(soft_label)
     print("   ")
     print("攻击前预测值")
-    for i in range(4):
-        print(CAPTCHA_LIST[np.argmax(pred_x[0, LEN*i:LEN*(i+1)])]," ", end="")
+    max_predict(pred_x)
     print("   ")
     print("攻击后预测值")
-    for i in range(4):
-        print(CAPTCHA_LIST[np.argmax(pred_adv[0, LEN * i:LEN * (i + 1)])]," ", end="")
+    max_predict(pred_adv)
 
     print("   ")
     #np.argmax(pred_adv)
 
-    acc_x=pred_x[0]*(Y[0]/4)#每个数字权重是1/4
+    acc_x=soft_label[0]*(Y[0]/4)#每个数字权重是1/4
     acc_adv=pred_adv[0]*(Y[0]/4)
     print("攻击前准确度",sum(acc_x),"攻击后准确度",sum(acc_adv))
 
@@ -194,9 +230,12 @@ def main(args):
     #model = load_model('../data/model_captcha8_100epochs_ALPHABET.h5py',custom_objects={'precision': precision} )
     #ALPHABET_100epochs_best
     def fn(correct, predicted):
-        return tf.nn.sigmoid_cross_entropy_with_logits(labels=correct,
-                                                       logits=predicted)
-    model = load_model('../data/ALPHABET5_best.h5py',custom_objects={'fn': fn})
+        loss = 0
+        for i in range(CAPTCHA_LEN):
+            loss += tf.nn.softmax_cross_entropy_with_logits(labels=correct[:, LEN * i:LEN * (i + 1)],
+                                                            logits=predicted[:, LEN * i:LEN * (i + 1)])
+        return loss
+    model = load_model('../data/Captcha_stu_best_1000.h5py',custom_objects={'fn': fn})
     print(model.summary())
     X_train, Y_train, X_test, Y_test = get_data(1,1)
     #y = model.predict(X_train)
